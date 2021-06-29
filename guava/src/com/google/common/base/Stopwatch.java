@@ -84,6 +84,9 @@ import java.util.concurrent.TimeUnit;
  *      });
  * }</pre>
  *
+ *
+ * 用来在开始时记录时间，结束时计算经过的时间
+ *
  * @author Kevin Bourrillion
  * @since 10.0
  */

@@ -133,6 +133,7 @@ public abstract class RateLimiter {
   @VisibleForTesting
   static RateLimiter create(double permitsPerSecond, SleepingStopwatch stopwatch) {
     RateLimiter rateLimiter = new SmoothBursty(stopwatch, 1.0 /* maxBurstSeconds */);
+    //设置每秒允许通过数
     rateLimiter.setRate(permitsPerSecond);
     return rateLimiter;
   }
@@ -218,6 +219,7 @@ public abstract class RateLimiter {
   @CheckForNull private volatile Object mutexDoNotUseDirectly;
 
   private Object mutex() {
+    //双锁检测创建mutex
     Object mutex = mutexDoNotUseDirectly;
     if (mutex == null) {
       synchronized (this) {
@@ -284,6 +286,11 @@ public abstract class RateLimiter {
    *
    * @return time spent sleeping to enforce rate, in seconds; 0.0 if not rate-limited
    * @since 16.0 (present in 13.0 with {@code void} return type})
+   *
+   *
+   * RateLimiter的原理就是每次调用 acquire时用当前时间和 nextFreeTicketMicros进行比较，
+   * 根据二者的间隔和添加单位令牌的时间间隔 stableIntervalMicros来刷新存储令牌数 storedPermits。
+   * 然后acquire会进行休眠，直到 nextFreeTicketMicros
    */
   @CanIgnoreReturnValue
   public double acquire() {
@@ -301,7 +308,9 @@ public abstract class RateLimiter {
    */
   @CanIgnoreReturnValue
   public double acquire(int permits) {
+    // 计算获取令牌所需等待的时间
     long microsToWait = reserve(permits);
+    // 进行线程sleep
     stopwatch.sleepMicrosUninterruptibly(microsToWait);
     return 1.0 * microsToWait / SECONDS.toMicros(1L);
   }
@@ -314,6 +323,7 @@ public abstract class RateLimiter {
    */
   final long reserve(int permits) {
     checkPermits(permits);
+    // 由于涉及并发操作，所以使用synchronized进行并发操作
     synchronized (mutex()) {
       return reserveAndGetWaitLength(permits, stopwatch.readMicros());
     }
@@ -432,7 +442,9 @@ public abstract class RateLimiter {
    * @return the required wait time, never negative
    */
   final long reserveAndGetWaitLength(int permits, long nowMicros) {
+    // 计算从当前时间开始，能够获取到目标数量令牌时的时间
     long momentAvailable = reserveEarliestAvailable(permits, nowMicros);
+    // 两个时间相减，获得需要等待的时间
     return max(momentAvailable - nowMicros, 0);
   }
 

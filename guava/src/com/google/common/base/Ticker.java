@@ -26,6 +26,8 @@ import com.google.common.annotations.GwtCompatible;
  * @author Kevin Bourrillion
  * @since 10.0 (<a href="https://github.com/google/guava/wiki/Compatibility">mostly
  *     source-compatible</a> since 9.0)
+ *
+ *     用于获取当前系统纳秒级时间
  */
 @GwtCompatible
 @ElementTypesAreNonnullByDefault
